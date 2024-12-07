@@ -53,12 +53,10 @@ bool contains(V2 n, const V2 *h) {
     return false;
 }
 
-inline
 bool is_blocked(V2 loc, const V2 *obstacles, const V2 *additional /*= NULL*/) {
     return contains(loc, obstacles) || (additional && additional->x == loc.x && additional->y == loc.y);
 }
 
-inline
 bool in_bounds(V2 loc, const V2 bounds) {
     return loc.x >= 0 && loc.x < bounds.x && loc.y >= 0 && loc.y < bounds.y;
 }
