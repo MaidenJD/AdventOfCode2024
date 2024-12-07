@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #define STB_DS_IMPLEMENTATION
 #include "stb/stb_ds.h"
@@ -9,6 +10,24 @@ typedef struct Calibration {
     size_t result;
     size_t *operands;
 } Calibration;
+
+void increment_ternary(char *ternary) {
+    for (size_t i = 0; i < arrlenu(ternary); i += 1) {
+        ternary[i] += 1;
+        if (ternary[i] < 3) break;
+
+        ternary[i] = 0;
+    }
+}
+
+void print_ternary(char *ternary) {
+    size_t len = arrlenu(ternary);
+    for (size_t i = 0; i < len; i += 1) {
+        fprintf(stdout, "%d", ternary[len - i - 1]);
+    }
+
+    fprintf(stdout, "\n");
+}
 
 int main() {
     size_t result1 = 0;
@@ -50,12 +69,16 @@ int main() {
 
         free(input);
 
+        Calibration *failed_calibrations = NULL;
+
         for (size_t i = 0; i < arrlenu(calibrations); i += 1) {
             Calibration *c = &calibrations[i];
             int num_operands = arrlenu(c->operands);
             size_t max_operator_mask = 1 << (num_operands - 1);
 
             // fprintf(stdout, "%lu: ", c->result);
+
+            bool match = false;
 
             for (size_t operator_mask = 0; operator_mask < max_operator_mask; operator_mask += 1) {
                 size_t value = c->operands[0];
@@ -75,13 +98,81 @@ int main() {
                 // fprintf(stdout, " [%lu]", value);
 
                 if (value == c->result) {
-                    result1 += value;
+                    match = true;
                     break;
                 }
             }
 
+            if (match) {
+                result1 += c->result;
+            } else {
+                arrput(failed_calibrations, *c);
+            }
+
             // fprintf(stdout, "\n");
         }
+
+        char *operator_mask_ternary = NULL;
+        arrsetlen(operator_mask_ternary, 128);
+
+        char *max_operator_mask_ternary = NULL;
+        arrsetlen(max_operator_mask_ternary, 128);
+
+        result2 = result1;
+
+        for (size_t i = 0; i < arrlenu(failed_calibrations); i += 1) {
+            Calibration *c = &failed_calibrations[i];
+            int num_operands = arrlenu(c->operands);
+
+            memset(operator_mask_ternary, 0, arrlenu(operator_mask_ternary));
+            memset(max_operator_mask_ternary, 0, arrlenu(max_operator_mask_ternary));
+
+            max_operator_mask_ternary[num_operands - 1] = 1;
+
+            // fprintf(stdout, "%lu: ", c->result);
+
+            bool match = false;
+
+            bool first = true;
+            for (; memcmp(operator_mask_ternary, max_operator_mask_ternary, arrlenu(operator_mask_ternary)) != 0; increment_ternary(operator_mask_ternary)) {
+                size_t value = c->operands[0];
+
+                // if (first) fprintf(stdout, ", "); else first = false;
+
+                for (size_t operator_index = 0; operator_index < num_operands - 1; operator_index += 1) {
+                    size_t operator_id = operator_mask_ternary[operator_index];
+
+                    // if (operator_index > 0) fprintf(stdout, " ");
+
+                    size_t operand = c->operands[operator_index + 1];
+
+                    switch (operator_id) {
+                        case 0: value += operand; /*fprintf(stdout, "+");*/ break;
+                        case 1: value *= operand; /*fprintf(stdout, "*");*/ break;
+                        case 2: {
+                            value = value * (int) powf(10, (int) log10(operand * 10)) + operand;
+                            // fprintf(stdout, "|");
+                            break;
+                        }
+                    }
+                }
+
+                // fprintf(stdout, " [%lu]", value);
+
+                if (value == c->result) {
+                    match = true;
+                    break;
+                }
+            }
+
+            if (match) {
+                result2 += c->result;
+            }
+
+            // fprintf(stdout, "\n");
+        }
+
+        arrfree(failed_calibrations);   //  Next loop will handle operands since these were shallow copies
 
         for (size_t i = 0; i < arrlenu(calibrations); i += 1) {
             arrfree(calibrations[i].operands);
