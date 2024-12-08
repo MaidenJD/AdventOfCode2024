@@ -30,7 +30,8 @@ int main() {
 
     V2 bounds = { 0 };
     Antenna_Map *map = NULL;
-    Antinode_Set *antinodes = NULL;
+    Antinode_Set *antinodesR1 = NULL;
+    Antinode_Set *antinodesR2 = NULL;
 
     {
         char *input = NULL;
@@ -97,30 +98,48 @@ int main() {
         for (size_t i = 0; i < arrlenu(m->value.nodes); i += 1) {
             V2 loc = m->value.nodes[i];
 
-            for (size_t j = 0; j < arrlenu(m->value.nodes); j += 1) {
-                if (i == j) continue;
+            if (arrlenu(m->value.nodes) > 1)
+            {
+                hmput(antinodesR2, loc, NULL);
 
-                V2 loc2 = m->value.nodes[j];
+                for (size_t j = 0; j < arrlenu(m->value.nodes); j += 1) {
+                    if (i == j) continue;
 
-                V2 delta = {
-                    loc2.x - loc.x,
-                    loc2.y - loc.y,
-                };
+                    V2 loc2 = m->value.nodes[j];
 
-                V2 antinode = {
-                    loc.x - delta.x,
-                    loc.y - delta.y,
-                };
+                    V2 delta = {
+                        loc2.x - loc.x,
+                        loc2.y - loc.y,
+                    };
 
-                if (antinode.x >= 0 && antinode.y >= 0 && antinode.x < bounds.x && antinode.y < bounds.y) {
-                    hmput(antinodes, antinode, NULL);
+                    V2 antinode = {
+                        loc.x - delta.x,
+                        loc.y - delta.y,
+                    };
+
+                    if (antinode.x >= 0 && antinode.y >= 0 && antinode.x < bounds.x && antinode.y < bounds.y) {
+                        hmput(antinodesR1, antinode, NULL);
+                    }
+
+                    while (antinode.x >= 0 && antinode.y >= 0 && antinode.x < bounds.x && antinode.y < bounds.y) {
+                        hmput(antinodesR2, antinode, NULL);
+                        antinode.x -= delta.x;
+                        antinode.y -= delta.y;
+                    }
                 }
             }
         }
     }
 
-    result1 = hmlenu(antinodes);
+    result1 = hmlenu(antinodesR1);
+    result2 = hmlenu(antinodesR2);
 
+    hmfree(antinodesR1);
+    hmfree(antinodesR2);
+
+    for (size_t i = 0; i < hmlenu(map); i += 1) {
+        arrfree(map[i].value.nodes);
+    }
     hmfree(map);
 
     fprintf(stdout, "Day 8-1: %lu\n", result1);
