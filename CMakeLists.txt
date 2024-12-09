@@ -13,5 +13,6 @@ add_executable(day5 day5.c)
 add_executable(day6 day6.c)
 add_executable(day7 day7.c)
 add_executable(day8 day8.c)
+add_executable(day9 day9.c)
 
 target_link_libraries(day7 m)
